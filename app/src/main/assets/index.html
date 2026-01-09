@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saleshubtracker</title>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --glass: rgba(255, 255, 255, 0.98);
+            --primary: #2563eb;
+            --text-main: #334155;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
+        body.dark {
+            --glass: rgba(30, 41, 59, 0.98);
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --border: #475569;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; padding-bottom: 90px; transition: 0.3s; }
+
+        /* Card Design */
+        .card { background: var(--glass); border-radius: 16px; padding: 20px; margin: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); }
+
+        /* Header */
+        .header { padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; color: white; }
+        .header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+
+        /* Inputs & Buttons */
+        input, select { width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; font-family: inherit; font-size: 0.95rem; margin-bottom: 12px; color: var(--text-main); }
+        body.dark input, body.dark select { background: rgba(15, 23, 42, 0.3); }
+        .btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: 600; color: white; margin-top: 8px; cursor: pointer; background: var(--primary); }
+        .btn-green { background: #10b981; } .btn-red { background: #ef4444; } .btn-purple { background: #8b5cf6; } .btn-dark { background: #334155; }
+        .action-btn { padding: 8px; cursor: pointer; }
+
+        /* KPI DASHBOARD */
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        .kpi-box { padding: 16px; border-radius: 12px; color: white; position: relative; overflow: hidden; }
+        .kpi-box.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .kpi-box.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .kpi-box.green { background: linear-gradient(135deg, #10b981, #059669); }
+        .kpi-box.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+        .kpi-val { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+        .kpi-lbl { font-size: 0.75rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+        .kpi-sub { font-size: 0.7rem; opacity: 0.8; margin-top: 4px; }
+
+        /* SHARE TABLE GRID */
+        .share-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 5px; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 8px; font-size: 0.75rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; }
+        .share-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 5px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 0.85rem; }
+        .share-val { text-align: right; font-weight: 600; }
+
+        /* Price Segment Heatmap */
+        .seg-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+        .seg-table th { text-align: left; padding: 8px; color: var(--text-sub); border-bottom: 1px solid var(--border); }
+        .seg-table td { padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-main); }
+        .seg-val { font-weight: bold; text-align: center; }
+
+        /* Logs */
+        .log-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+
+        /* Nav */
+        .nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); display: flex; justify-content: space-around; padding: 16px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 100; }
+        body.dark .nav { background: rgba(30, 41, 59, 0.9); }
+        .nav-item { text-align: center; color: var(--text-sub); font-size: 0.7rem; opacity: 0.7; }
+        .nav-item.active { color: var(--primary); opacity: 1; transform: translateY(-2px); }
+        .nav-item i { font-size: 1.25rem; display: block; margin-bottom: 4px; }
+
+        .hidden { display: none !important; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: white; background: var(--primary); }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h3, h4 { margin: 0 0 15px 0; color: var(--text-main); font-weight: 600; }
+        .section-title { font-size: 0.85rem; text-transform: uppercase; color: var(--text-sub); margin-bottom: 12px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div><p style="margin:0; opacity:0.8;">Welcome Back</p><h1>Saleshubtracker</h1></div>
+        <i class="fas fa-moon" style="font-size: 1.25rem; cursor: pointer; padding:10px; background:rgba(255,255,255,0.1); border-radius:50%;" onclick="toggleTheme()"></i>
+    </div>
+
+    <!-- TAB 1: TRACKER -->
+    <div id="tab-tracker">
+        <div class="card">
+            <div class="section-title">New Transaction</div>
+            <input type="hidden" id="editId">
+            <input type="date" id="tDate" onchange="renderLog()">
+            <select id="tBrand"><option>Samsung</option><option>Apple</option><option>Realme</option><option>Oppo</option><option>Vivo</option><option>Xiaomi</option><option>Moto</option><option>Other</option></select>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="tModel" placeholder="Model"><input type="text" id="tVariant" placeholder="Variant"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="number" id="tQty" placeholder="Qty" value="1"><input type="number" id="tPrice" placeholder="Price"></div>
+            <button class="btn" id="saveBtn" onclick="saveEntry()">ADD TO QUEUE</button>
+            <button class="btn btn-red hidden" id="cancelBtn" onclick="cancelEdit()">CANCEL</button>
+        </div>
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0;">Daily Log</h3><span id="logCount" class="badge">0</span>
+            </div>
+            <div id="logList"></div>
+        </div>
+    </div>
+
+    <!-- TAB 2: ANALYTICS -->
+    <div id="tab-analytics" class="hidden">
+        <div class="card">
+            <div class="toggle-row">
+                <h3 style="margin:0;">Performance</h3>
+                <label style="font-size:0.85rem; font-weight:500; display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="volToggle" onchange="renderAnalytics()"> Volume Mode
+                </label>
+            </div>
+            <div class="kpi-grid">
+                <div class="kpi-box blue"><div class="kpi-val" id="kpiFtd">0</div><div class="kpi-lbl">Today (FTD)</div></div>
+                <div class="kpi-box purple"><div class="kpi-val" id="kpiAds">0</div><div class="kpi-lbl">Daily Avg (ADS)</div></div>
+                <div class="kpi-box green"><div class="kpi-val" id="kpiMtd">0</div><div class="kpi-lbl">Month (MTD)</div></div>
+                <div class="kpi-box orange"><div class="kpi-val" id="kpiLmtd">0</div><div class="kpi-lbl">Last Month (LMTD)</div><div class="kpi-sub" id="lmtdDate">Same date</div></div>
+            </div>
+            <div class="section-title">Weekly Trends</div>
+            <div style="height:220px;"><canvas id="chartWeekly"></canvas></div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">Market Share %</div>
+            <div style="margin-bottom:10px;">
+                <div class="share-header"><div>Brand</div><div style="text-align:right">FTD</div><div style="text-align:right">MTD</div><div style="text-align:right">LMTD</div></div>
+                <div id="shareTable"></div>
+            </div>
+            <div style="height:200px; position:relative; margin-top:20px;"><canvas id="chartShare"></canvas></div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">Brand Performance</div>
+            <div style="height:250px;"><canvas id="chartBrand"></canvas></div>
+        </div>
+
+        <div class="card" style="overflow-x:auto;">
+            <div class="section-title">Price Segment Analysis</div>
+            <table class="seg-table" id="segTable"></table>
+        </div>
+    </div>
+
+    <!-- TAB 3: REPORTS -->
+    <div id="tab-reports" class="hidden">
+        <div class="card">
+            <div class="section-title">Monthly Reports</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                <select id="repMonth"></select><select id="repYear"></select>
+            </div>
+            <button class="btn btn-purple" onclick="genPDF('MATRIX')">Matrix Overview (Landscape)</button>
+            <button class="btn" style="background:#3b82f6" onclick="genPDF('DETAILED')">Detailed Report (Portrait)</button>
+            <button class="btn" style="background:#0ea5e9" onclick="genPDF('SEGMENT')">Price Segment Analysis</button>
+            <button class="btn btn-green" onclick="genPDF('MASTER')">Master Report</button>
+            <button class="btn" style="background:#334155" onclick="exportCSV()">Export CSV</button>
+        </div>
+    </div>
+
+    <!-- TAB 4: PROFILE -->
+    <div id="tab-profile" class="hidden">
+        <div class="card">
+            <div class="section-title">Settings</div>
+            <input type="text" id="setOutlet" placeholder="Outlet Name"><input type="text" id="setSec" placeholder="SEC Name">
+            <button class="btn" onclick="saveSettings()">Save Info</button>
+        </div>
+        <div class="card">
+            <div class="section-title">Data</div>
+            <input type="file" id="csvInput" style="display:none" onchange="importCSV(this)">
+            <button class="btn btn-green" onclick="document.getElementById('csvInput').click()">Import Backup (.csv)</button>
+            <button class="btn btn-red" onclick="if(confirm('RESET ALL DATA?')){localStorage.clear(); location.reload();}">Factory Reset</button>
+        </div>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item active" onclick="nav('tracker',this)"><i class="fas fa-edit"></i>Tracker</div>
+        <div class="nav-item" onclick="nav('analytics',this)"><i class="fas fa-chart-pie"></i>Analytics</div>
+        <div class="nav-item" onclick="nav('reports',this)"><i class="fas fa-file-pdf"></i>Reports</div>
+        <div class="nav-item" onclick="nav('profile',this)"><i class="fas fa-user-circle"></i>Profile</div>
+    </div>
+
+    <script>
+        // --- LOGIC ---
+        let sales = JSON.parse(localStorage.getItem('sh_pro_sales') || '[]');
+        let prefs = JSON.parse(localStorage.getItem('sh_pro_prefs') || '{"outlet":"","sec":"","dark":false}');
+
+        const brands = ["Samsung", "Apple", "Realme", "Oppo", "Vivo", "Xiaomi", "Moto", "Other"];
+        const colors = ['#3b82f6', '#64748b', '#eab308', '#22c55e', '#8b5cf6', '#f97316', '#6366f1', '#1e293b'];
+        const ranges = ["<10K", "10-15K", "15-20K", "20-30K", "30-40K", "40-70K", "70-100K", ">100K"];
+
+        window.onload = () => {
+            if(prefs.dark) document.body.classList.add('dark');
+            document.getElementById('tDate').valueAsDate = new Date();
+            document.getElementById('setOutlet').value = prefs.outlet;
+            document.getElementById('setSec').value = prefs.sec;
+            initDates(); renderLog();
+        };
+
+        function nav(t,el) {
+            document.querySelectorAll('div[id^="tab-"]').forEach(x=>x.classList.add('hidden'));
+            document.getElementById('tab-'+t).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+            el.classList.add('active');
+            if(t==='analytics') renderAnalytics();
+        }
+
+        // --- TRACKER & CORE ---
+        function saveEntry() {
+            const id = document.getElementById('editId').value;
+            const date = document.getElementById('tDate').value;
+            const price = parseFloat(document.getElementById('tPrice').value);
+            const qty = parseInt(document.getElementById('tQty').value);
+            if(!date || !price) return alert("Missing Info");
+
+            const entry = { id: id?parseFloat(id):Date.now(), date, brand:document.getElementById('tBrand').value, model:document.getElementById('tModel').value||'-', variant:document.getElementById('tVariant').value||'-', price, qty };
+            if(id) { const idx = sales.findIndex(s=>s.id===entry.id); if(idx!==-1) sales[idx]=entry; cancelEdit(); }
+            else sales.push(entry);
+            save(); renderLog();
+        }
+
+        function renderLog() {
+            const d = document.getElementById('tDate').value;
+            const list = sales.filter(s => s.date === d);
+            document.getElementById('logCount').innerText = list.length;
+            document.getElementById('logList').innerHTML = list.map(s => `
+                <div class="log-item">
+                    <div><div class="log-brand" style="color:${colors[brands.indexOf(s.brand)]}">${s.brand} <span style="font-weight:400; color:var(--text-sub)">${s.model}</span></div><div class="log-sub">${s.variant} | ${s.qty} units</div></div>
+                    <div style="text-align:right"><div class="log-price">₹${(s.price*s.qty).toLocaleString()}</div>
+                    <div style="margin-top:4px"><i class="fas fa-pen action-btn" style="color:#f59e0b" onclick="editSale(${s.id})"></i><i class="fas fa-trash action-btn" style="color:#ef4444" onclick="del(${s.id})"></i></div></div>
+                </div>`).join('') || '<div style="text-align:center; opacity:0.5; padding:20px;">No entries</div>';
+        }
+
+        function editSale(id) {
+            const s = sales.find(x=>x.id===id); if(!s) return;
+            document.getElementById('editId').value=s.id; document.getElementById('tDate').value=s.date;
+            document.getElementById('tBrand').value=s.brand; document.getElementById('tModel').value=s.model;
+            document.getElementById('tVariant').value=s.variant; document.getElementById('tPrice').value=s.price; document.getElementById('tQty').value=s.qty;
+            document.getElementById('saveBtn').innerText="UPDATE"; document.getElementById('saveBtn').style.background="#f59e0b";
+            document.getElementById('cancelBtn').classList.remove('hidden'); window.scrollTo(0,0);
+        }
+        function cancelEdit() {
+            document.getElementById('editId').value=""; document.getElementById('saveBtn').innerText="ADD TO QUEUE";
+            document.getElementById('saveBtn').style.background="var(--primary)"; document.getElementById('cancelBtn').classList.add('hidden');
+            document.getElementById('tModel').value=""; document.getElementById('tVariant').value=""; document.getElementById('tPrice').value=""; document.getElementById('tQty').value="1";
+        }
+        function del(id) { if(confirm("Delete?")) { sales=sales.filter(s=>s.id!==id); save(); renderLog(); } }
+
+        // --- ADVANCED ANALYTICS (FIXED LMTD & SHARE) ---
+        let chWk, chBr, chShare;
+        function renderAnalytics() {
+            const isVol = document.getElementById('volToggle').checked;
+            const now = new Date();
+            const cm = now.getMonth(), cy = now.getFullYear();
+            const lm = cm===0 ? 11 : cm-1;
+            const ly = cm===0 ? cy-1 : cy;
+            const todayDate = now.getDate();
+            const tDateVal = document.getElementById('tDate').value;
+
+            // Datasets
+            const mtd = sales.filter(s => { let d=new Date(s.date); return d.getMonth()==cm && d.getFullYear()==cy; });
+            const lmtd = sales.filter(s => {
+                let d = new Date(s.date);
+                return d.getMonth()==lm && d.getFullYear()==ly && d.getDate()<=todayDate;
+            });
+            const ftd = sales.filter(s => s.date === tDateVal);
+
+            // Helper
+            const sum = (arr) => arr.reduce((a, b) => a + (isVol ? b.qty : (b.price * b.qty)), 0);
+            const fmt = (v) => isVol ? v : "₹" + (v > 999 ? (v/1000).toFixed(1)+"k" : v);
+            const getPct = (part, whole) => whole > 0 ? ((part/whole)*100).toFixed(1) : "0.0";
+
+            // 1. KPIs
+            const total = sum(mtd);
+            const lmtdTotal = sum(lmtd);
+            const ftdTotal = sum(ftd);
+
+            document.getElementById('kpiFtd').innerText = fmt(ftdTotal);
+            document.getElementById('kpiAds').innerText = fmt(Math.round(total / (todayDate || 1)));
+            document.getElementById('kpiMtd').innerText = fmt(total);
+            document.getElementById('kpiLmtd').innerText = fmt(lmtdTotal);
+            document.getElementById('lmtdDate').innerText = `vs ${now.getDate()} ${new Date(ly, lm).toLocaleString('default', {month:'short'})}`;
+
+            // 2. Share Grid
+            let shareHtml = "";
+            brands.forEach((b, i) => {
+                const vFtd = sum(ftd.filter(s => s.brand === b));
+                const vMtd = sum(mtd.filter(s => s.brand === b));
+                const vLmtd = sum(lmtd.filter(s => s.brand === b));
+
+                shareHtml += `
+                <div class="share-row">
+                    <div style="font-weight:600; color:${colors[i]}"><i class="fas fa-circle" style="font-size:0.5rem; margin-right:4px;"></i>${b}</div>
+                    <div class="share-val">${getPct(vFtd, ftdTotal)}%</div>
+                    <div class="share-val">${getPct(vMtd, total)}%</div>
+                    <div class="share-val" style="opacity:0.7">${getPct(vLmtd, lmtdTotal)}%</div>
+                </div>`;
+            });
+            document.getElementById('shareTable').innerHTML = shareHtml;
+
+            // 3. Weekly Stacked
+            const wkData = Array(4).fill(0).map(() => Array(8).fill(0));
+            mtd.forEach(s => {
+                let d = new Date(s.date).getDate();
+                let w = d<=7 ? 0 : d<=14 ? 1 : d<=21 ? 2 : 3;
+                let bIdx = brands.indexOf(s.brand);
+                if(bIdx > -1) wkData[w][bIdx] += isVol ? s.qty : (s.price * s.qty);
+            });
+
+            Chart.defaults.font.family = 'Inter';
+            if(chWk) chWk.destroy();
+            chWk = new Chart(document.getElementById('chartWeekly'), {
+                type: 'bar',
+                data: {
+                    labels: ['Wk1', 'Wk2', 'Wk3', 'Wk4'],
+                    datasets: brands.map((b, i) => ({ label: b, data: [wkData[0][i], wkData[1][i], wkData[2][i], wkData[3][i]], backgroundColor: colors[i], borderRadius:4 }))
+                },
+                options: { scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true } }, plugins: { legend: { display: false } }, maintainAspectRatio: false }
+            });
+
+            // 4. Brand
+            const brData = brands.map(b => sum(mtd.filter(s => s.brand === b)));
+            if(chBr) chBr.destroy();
+            chBr = new Chart(document.getElementById('chartBrand'), {
+                type: 'bar',
+                data: { labels: brands, datasets: [{ label: 'Data', data: brData, backgroundColor: colors, borderRadius:6 }] },
+                options: { indexAxis: 'y', scales: { x: { grid: { display: false } }, y: { grid: { display: false } } }, plugins: { legend: { display: false } }, maintainAspectRatio: false }
+            });
+
+            // 5. Doughnut
+            if(chShare) chShare.destroy();
+            chShare = new Chart(document.getElementById('chartShare'), {
+                type: 'doughnut',
+                data: { labels: brands, datasets: [{ data: brData, backgroundColor: colors, borderWidth: 0 }] },
+                options: { plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } }, maintainAspectRatio: false }
+            });
+
+            // 6. Price Segment Table
+            let segHtml = "<thead><tr><th>Brand</th>" + ranges.map(r => `<th>${r}</th>`).join('') + "</tr></thead><tbody>";
+            brands.forEach(b => {
+                let row = `<tr><td style='font-weight:bold; color:${colors[brands.indexOf(b)]}'>${b}</td>`;
+                const subs = mtd.filter(s => s.brand === b);
+                const counts = Array(8).fill(0);
+                subs.forEach(s => {
+                    let p=s.price, i=7;
+                    if(p<10000) i=0; else if(p<15000) i=1; else if(p<20000) i=2; else if(p<30000) i=3;
+                    else if(p<40000) i=4; else if(p<70000) i=5; else if(p<100000) i=6;
+                    counts[i] += s.qty;
+                });
+                row += counts.map(c => `<td class='seg-val' style='opacity:${c>0?1:0.2}'>${c>0?c:'-'}</td>`).join('');
+                segHtml += row + "</tr>";
+            });
+            document.getElementById('segTable').innerHTML = segHtml + "</tbody>";
+        }
+
+        // --- PDF & EXPORT (FIXED) ---
+        function genPDF(type) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF(type.includes('MATRIX')||type.includes('MASTER')?'l':'p', 'mm', 'a4');
+            const m = document.getElementById('repMonth').value, y = document.getElementById('repYear').value;
+            const data = sales.filter(s => { let d=new Date(s.date); return d.getMonth()==m && d.getFullYear()==y; }).sort((a,b)=>a.date.localeCompare(b.date));
+            if(!data.length) return alert("No Data");
+
+            doc.setFillColor(37,99,235); doc.rect(0,0,297,25,'F'); doc.setTextColor(255); doc.setFontSize(16);
+            doc.text(`REPORT: ${type}`, 14, 10); doc.setFontSize(10); doc.text(`Outlet: ${prefs.outlet} | SEC: ${prefs.sec}`, 14, 18); doc.setTextColor(0);
+
+            let Y = 35;
+            if(type.includes('MATRIX') || type.includes('MASTER')) {
+                const dates = [...new Set(data.map(s => s.date))];
+                const body = dates.map(d => {
+                    let r = [d], tot=0, logStr=[];
+                    brands.forEach(b => {
+                        let sub = data.filter(s => s.date === d && s.brand === b);
+                        let q = sub.reduce((a,x)=>a+x.qty,0), v = sub.reduce((a,x)=>a+(x.price*x.qty),0);
+                        r.push(q>0 ? `${q} (${(v/1000).toFixed(0)}k)` : '-');
+                        tot+=q;
+                        if(q>0) sub.forEach(s=>logStr.push(`${s.brand} ${s.model}`));
+                    });
+                    r.push(tot); r.push(logStr.join(", ")); return r;
+                });
+                doc.text("Daily Matrix", 14, Y);
+                doc.autoTable({ startY:Y+5, head:[['Date',...brands,'Total','Logs']], body:body, theme:'grid', styles:{fontSize:7}, columnStyles:{10:{cellWidth:50}} });
+                Y = doc.lastAutoTable.finalY + 15;
+            }
+            if(type.includes('SEGMENT') || type.includes('MASTER')) {
+                if(Y>150) { doc.addPage(); Y=20; } doc.text("Price Segment", 14, Y);
+                const body = brands.map(b => {
+                    let r = [b], cnt = Array(8).fill(0);
+                    data.filter(s=>s.brand==b).forEach(s => {
+                        let p=s.price, i=7;
+                        if(p<10000) i=0; else if(p<15000) i=1; else if(p<20000) i=2; else if(p<30000) i=3;
+                        else if(p<40000) i=4; else if(p<70000) i=5; else if(p<100000) i=6;
+                        cnt[i]+=s.qty;
+                    });
+                    return r.concat(cnt.map(c=>c>0?c:'-'));
+                });
+                // FIX: Use 'ranges' variable here
+                doc.autoTable({ startY:Y+5, head:[['Brand',...ranges]], body:body, theme:'grid', headStyles:{fillColor:[80,80,80]} });
+                Y = doc.lastAutoTable.finalY + 15;
+            }
+            if(type.includes('DETAILED') || type.includes('MASTER')) {
+                if(Y>180) { doc.addPage(); Y=20; } doc.text("Log", 14, Y);
+                doc.autoTable({ startY:Y+5, head:[['Date','Brand','Model','Price','Qty','Total']], body:data.map(s=>[s.date,s.brand,s.model,s.price,s.qty,s.price*s.qty]), theme:'striped' });
+            }
+            doc.save('Report.pdf');
+        }
+
+        function save() { localStorage.setItem('sh_pro_sales', JSON.stringify(sales)); }
+        function saveSettings() { prefs.outlet=document.getElementById('setOutlet').value; prefs.sec=document.getElementById('setSec').value; localStorage.setItem('sh_pro_prefs', JSON.stringify(prefs)); alert("Saved"); }
+        function toggleTheme() { document.body.classList.toggle('dark'); prefs.dark=!prefs.dark; localStorage.setItem('sh_pro_prefs', JSON.stringify(prefs)); }
+        function initDates() { const ms=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; ms.forEach((m,i)=>document.getElementById('repMonth').add(new Option(m,i))); for(let i=2024; i<=2030; i++) document.getElementById('repYear').add(new Option(i,i)); document.getElementById('repMonth').value=new Date().getMonth(); document.getElementById('repYear').value=new Date().getFullYear(); }
+        function exportCSV() { const csv="Date,Brand,Model,Variant,Price,Qty\n"+sales.map(s=>`${s.date},${s.brand},${s.model},${s.variant},${s.price},${s.qty}`).join("\n"); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download="Backup.csv"; a.click(); }
+        function importCSV(input) { const r=new FileReader(); r.onload=e=>{ const l=e.target.result.split("\n").slice(1); l.forEach(x=>{ const c=x.split(","); if(c.length>4) { let d=c[0].trim(); if(!isNaN(d)&&d.length>10) d=new Date(parseInt(d)).toISOString().slice(0,10); else if(!d.includes("-")) d=new Date().toISOString().slice(0,10); sales.push({id:Date.now()+Math.random(), date:d, brand:c[1], model:c[2], variant:c[3]||'-', price:parseFloat(c[4]), qty:parseInt(c[5])}) }}); save(); alert("Imported"); location.reload(); }; r.readAsText(input.files[0]); }
+    </script>
+</body>
+</html>
